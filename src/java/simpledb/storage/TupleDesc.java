@@ -53,6 +53,7 @@ public class TupleDesc implements Serializable {
     private static final long serialVersionUID = 1L;
 
     public TupleDesc(TupleDesc other) {
+        items = new ArrayList<>();
         items.addAll(other.items);
     }
 
@@ -66,6 +67,7 @@ public class TupleDesc implements Serializable {
      *                be null.
      */
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
+        items = new ArrayList<>();
         assert typeAr.length == fieldAr.length;
         for (int i = 0; i < typeAr.length; i++) {
             TDItem item = new TDItem(typeAr[i], fieldAr[i]);
@@ -81,8 +83,9 @@ public class TupleDesc implements Serializable {
      *               TupleDesc. It must contain at least one entry.
      */
     public TupleDesc(Type[] typeAr) {
+        items = new ArrayList<>();
         for (int i = 0; i < typeAr.length; i++) {
-            TDItem item = new TDItem(typeAr[i], null);
+            TDItem item = new TDItem(typeAr[i], "");
             items.add(item);
         }
     }
@@ -154,7 +157,11 @@ public class TupleDesc implements Serializable {
      *         Note that tuples from a given TupleDesc are of a fixed size.
      */
     public int getSize() {
-        return items.size();
+        int size = 0;
+        for (var i = 0; i < items.size(); i++) {
+            size += items.get(i).fieldType.getLen();
+        }
+        return size;
     }
 
     /**
