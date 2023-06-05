@@ -2,12 +2,14 @@ package simpledb.common;
 
 import simpledb.storage.DbFile;
 import simpledb.storage.HeapFile;
+import simpledb.storage.Tuple;
 import simpledb.storage.TupleDesc;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,13 +23,35 @@ import java.util.concurrent.ConcurrentHashMap;
  * @Threadsafe
  */
 public class Catalog {
+    private class Table {
+        
+        public DbFile dbFile;
+        public String tableName;
+        public String keyName;
+        public int tableId;
+
+        public Table(DbFile db,  String name, String key, int id) {
+            dbFile = db;
+            tableName = name;
+            keyName = key;
+            tableId = id;
+        }
+    };
+
+    private ArrayList<Table> tables;
+    private ArrayList<Integer> tids;
+    private HashMap<String , Integer> nameToTable;
+    private HashMap<Integer, Integer> IdToTable;
 
     /**
      * Constructor.
      * Creates a new, empty catalog.
      */
     public Catalog() {
-        // TODO: some code goes here
+        tables = new ArrayList<>();
+        tids = new ArrayList<>();
+        nameToTable = new HashMap<>();
+        IdToTable = new HashMap<>();
     }
 
     /**
@@ -41,7 +65,13 @@ public class Catalog {
      * @param pkeyField the name of the primary key field
      */
     public void addTable(DbFile file, String name, String pkeyField) {
-        // TODO: some code goes here
+        int id = file.getId();
+        var table = new Table(file, name, pkeyField, id);       
+        tables.add(table);
+        tids.add(id);
+        int index = tables.size() - 1;
+        nameToTable.put(name, index);
+        IdToTable.put(id, index);
     }
 
     public void addTable(DbFile file, String name) {
@@ -66,8 +96,11 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public int getTableId(String name) throws NoSuchElementException {
-        // TODO: some code goes here
-        return 0;
+        if (!nameToTable.containsKey(name)) {
+            throw new NoSuchElementException(name);
+        }
+
+        return tables.get(nameToTable.get(name)).tableId;
     }
 
     /**
@@ -78,8 +111,11 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
-        // TODO: some code goes here
-        return null;
+        if (!IdToTable.containsKey(tableid)) {
+            String s = "" + tableid;
+            throw new NoSuchElementException(s);
+        }
+        return tables.get(IdToTable.get(tableid)).dbFile.getTupleDesc();
     }
 
     /**
@@ -90,30 +126,39 @@ public class Catalog {
      *                function passed to addTable
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
-        // TODO: some code goes here
-        return null;
+        if (!IdToTable.containsKey(tableid)) {
+            String s = "" + tableid;
+            throw new NoSuchElementException(s);
+        }
+
+        return tables.get(IdToTable.get(tableid)).dbFile;
     }
 
     public String getPrimaryKey(int tableid) {
-        // TODO: some code goes here
-        return null;
+        if (!IdToTable.containsKey(tableid)) {
+            String s = "" + tableid;
+            throw new NoSuchElementException(s);
+        }
+        return tables.get(IdToTable.get(tableid)).keyName;
     }
 
     public Iterator<Integer> tableIdIterator() {
-        // TODO: some code goes here
-        return null;
+        return tids.iterator();
     }
 
     public String getTableName(int id) {
-        // TODO: some code goes here
-        return null;
+        return tables.get(IdToTable.get(id)).tableName;
     }
 
     /**
      * Delete all tables from the catalog
      */
     public void clear() {
-        // TODO: some code goes here
+        // FIXME is this function needing to delete files?
+        this.IdToTable.clear();;
+        this.nameToTable.clear();
+        this.tables.clear();
+        this.tids.clear();
     }
 
     /**
